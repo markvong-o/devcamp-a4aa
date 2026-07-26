@@ -6,9 +6,13 @@
 // so this exists as a themed safety net rather than a bare 404.
 // =============================================================
 
-// Resolves the same host the request came in on, but pointed at 5173,
-// handling both plain host:port and Codespaces' forwarded-port hostnames
-// (e.g. <name>-3000.app.github.dev -> <name>-5173.app.github.dev).
+// Best-effort server-side guess, used only as the href before JS runs
+// (or if it's disabled). Codespaces' port-forwarding proxy rewrites the
+// Host header to localhost:PORT before it reaches Express, even though
+// the browser is actually on the public *.app.github.dev domain -- so
+// this is NOT trustworthy for the Codespaces case. The inline script in
+// renderPage() below uses window.location instead, which always reflects
+// the real address the browser is showing, and overwrites this on load.
 function resolveAppUrl(req) {
   const host = req.headers.host || "localhost:5173";
   const codespacesMatch = host.match(/^(.*)-\d+(\.app\.github\.dev|\.github\.dev)$/);
@@ -93,8 +97,24 @@ function renderPage(serviceName, serviceDescription, appUrl) {
     <span class="dot"></span>
     <h1>This is the ${serviceName}, not the app</h1>
     <p>${serviceDescription} Sorry for the confusion -- the Nexus app itself runs on port <code>5173</code>.</p>
-    <a class="btn" href="${appUrl}">Go to the Nexus app &rarr;</a>
+    <a class="btn" id="app-link" href="${appUrl}">Go to the Nexus app &rarr;</a>
   </div>
+  <script>
+    // window.location always reflects the real address the browser is
+    // showing -- unlike the Host header the backend receives, which
+    // Codespaces' port-forwarding proxy rewrites to localhost:PORT.
+    // Recompute the link here so it points at the actual public domain.
+    (function () {
+      var loc = window.location;
+      var codespacesMatch = loc.hostname.match(/^(.*)-\\d+(\\.app\\.github\\.dev|\\.github\\.dev)$/);
+      var url = codespacesMatch
+        ? loc.protocol + "//" + codespacesMatch[1] + "-5173" + codespacesMatch[2]
+        : loc.protocol + "//" + loc.hostname + ":5173";
+      var link = document.getElementById("app-link");
+      link.href = url;
+      link.textContent = "Go to the Nexus app \\u2192";
+    })();
+  </script>
 </body>
 </html>`;
 }
