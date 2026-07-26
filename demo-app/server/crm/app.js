@@ -22,6 +22,7 @@
 import express from "express";
 import { createHmac, randomBytes } from "crypto";
 import { findAvailablePort } from "../utils/port.js";
+import { wrongPortFallback } from "../utils/wrongPortPage.js";
 
 const app = express();
 app.use(express.json());
@@ -181,6 +182,18 @@ app.get("/crm/activities", requireCRMToken, (_req, res) => {
 app.get("/crm/health", (_req, res) => {
   res.json({ status: "ok", service: "Nexus CRM", activityCount: activities.length });
 });
+
+// Anyone hitting this port directly in a browser (e.g. a mis-clicked
+// Codespaces port-forward toast) gets a themed notice instead of a bare
+// 404 -- the real app is Vite on 5173. Placed after the real OAuth2/API
+// routes above so it never shadows the actual CRM connection flow.
+app.get(
+  "*",
+  wrongPortFallback(
+    "Nexus CRM mock service",
+    "This is a stand-in OAuth2 + activities API used by the Token Vault module."
+  )
+);
 
 // ---- Start -------------------------------------------------------
 

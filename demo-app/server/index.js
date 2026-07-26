@@ -40,6 +40,7 @@ import { fileURLToPath } from "url";
 import guideRouter from "./routes/guide.js";
 import hooksRouter from "./platform/hooks.js";
 import { tenantResolver } from "./platform/tenantResolver.js";
+import { wrongPortFallback } from "./utils/wrongPortPage.js";
 
 const PROVISIONED_ENV_KEYS = [
   "VITE_AUTH0_CLIENT_ID", "AUTH0_AUDIENCE", "AUTH0_TOOL_AUDIENCE",
@@ -802,6 +803,17 @@ if (fs.existsSync(distDir)) {
     res.sendFile(path.join(distDir, "index.html"));
   });
   console.log(`[Server] Serving built SPA from ${distDir}`);
+} else {
+  // Dev mode: no built SPA here, the real app is Vite on 5173. Anything
+  // not under /api or /hooks is someone hitting this port directly
+  // (e.g. Codespaces' port-forward toast pointing at the wrong port).
+  app.get(
+    /^(?!\/(api|hooks)\/).*/,
+    wrongPortFallback(
+      "Nexus API server",
+      "This backend powers tool calls, authentication, and provisioning for the Nexus app."
+    )
+  );
 }
 
 // Start servers

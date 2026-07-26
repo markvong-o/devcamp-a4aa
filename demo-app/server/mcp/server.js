@@ -47,6 +47,7 @@ import {
 } from "../fga/client.js";
 import { getToken, seedVaultForUser, TokenVaultAccessDeniedError } from "../token-vault/vault.js";
 import { addLog } from "./toolLog.js";
+import { wrongPortFallback } from "../utils/wrongPortPage.js";
 
 const app = express();
 app.use(express.json());
@@ -358,6 +359,17 @@ async function executeToolLogic(name, args, userSub, tenant, userAccessToken) {
       throw new Error(`Unknown tool: ${name}`);
   }
 }
+
+// Anyone hitting this port directly in a browser (e.g. a mis-clicked
+// Codespaces port-forward toast) gets a themed notice instead of a bare
+// 404 -- the real app is Vite on 5173.
+app.get(
+  "*",
+  wrongPortFallback(
+    "Nexus MCP server",
+    "This server exposes tools to the agent over a bearer-authenticated API."
+  )
+);
 
 // express-oauth2-jwt-bearer sets err.status = 401 on auth failures.
 // Without this handler Express would fall back to a 500, breaking the
