@@ -42,10 +42,13 @@ async function runChecks(moduleId, { isAuthenticated, getAccessTokenSilently, ge
           const base64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
           const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, "=");
           const payload = JSON.parse(atob(padded));
+          // The SPA requested this token for the Nexus backend audience
+          // above (`audience`), not the MCP server audience -- that one is
+          // only ever seen server-side, after the OBO exchange in Module 04.
           const hasAud = Array.isArray(payload.aud)
-            ? payload.aud.some((a) => a.includes("devcamp-mcp-server"))
-            : payload.aud?.includes("devcamp-mcp-server");
-          checks.push({ id: "jwt_aud", name: "JWT contains Nexus MCP audience",
+            ? payload.aud.includes(audience)
+            : payload.aud === audience;
+          checks.push({ id: "jwt_aud", name: "JWT contains Nexus API audience",
             pass: !!hasAud, message: hasAud ? `aud: ${JSON.stringify(payload.aud)}` : "Audience missing — check SPA configuration" });
           const hasScope = payload.scope?.includes("chat:send");
           checks.push({ id: "jwt_scope", name: "JWT contains chat:send scope",
@@ -145,8 +148,11 @@ function FGAQuiz({ onPass }) {
   return (
     <div className="module-checks">
       <div className="module-checks-header">
-        <h3 className="module-checks-title">{correct ? "✓ Module complete" : "Verify your setup"}</h3>
+        <h3 className="module-checks-title">{correct ? "✓ Module complete" : "Quick knowledge check"}</h3>
       </div>
+      <p className="fga-quiz-hint">
+        This module has no automated Run Checks step. Answer the question below and submit it to unlock the chat.
+      </p>
       <p className="fga-quiz-question">{FGA_QUIZ.question}</p>
       <ul className="fga-quiz-options">
         {FGA_QUIZ.options.map((opt) => (

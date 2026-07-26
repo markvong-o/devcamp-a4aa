@@ -742,7 +742,12 @@ app.post("/api/vault/disconnect", validateAccessToken, async (req, res) => {
 
 app.get("/api/vault/providers", validateAccessToken, async (req, res) => {
   const user = extractUser(req);
-  const linked = await getToken(user.sub, "crm", req.tenant, user.accessToken);
+  let linked = null;
+  try {
+    linked = await getToken(user.sub, "crm", req.tenant, user.accessToken);
+  } catch {
+    // Connection exists but doesn't allow API access (e.g. authentication-only) -- treat as not linked for display purposes.
+  }
   res.json({ providers: linked ? [{ provider: "crm" }] : [] });
 });
 

@@ -160,14 +160,23 @@ function logDecision(user, relation, object, allow) {
 
 const seededUsers = new Set();
 
-// Seed demo tuples branched by email so the FGA differentiation is visible:
-//   alice@... -> engineering dept member (reads all-company + engineering docs, can share)
-//   bob@...   -> all-company docs only (denied on engineering/hr/executive)
+// Seed demo tuples branched by identity so the FGA differentiation is visible:
+//   alice -> engineering dept member (reads all-company + engineering docs, can share)
+//   bob   -> all-company docs only (denied on engineering/hr/executive)
 //   any other -> same as alice (default for demo)
 // hr and executive docs are never seeded -> always a FGA deny case.
+//
+// Access tokens for a custom API audience don't carry an `email` claim by
+// default, so `email` is normally undefined here. Fall back to matching
+// `userId` against the demo user IDs recorded at provisioning time so Bob
+// still gets the restricted branch even without an email claim.
 export async function seedTuplesForUser(userId, email, tenant) {
   if (seededUsers.has(userId)) return;
-  console.log(`[FGA] Seeding tuples for user: ${userId} (email=${email || "n/a"})`);
+
+  const demoUsers = tenant?.deploymentData?.demo_users || {};
+  const isBob = email ? email.startsWith("bob") : userId === demoUsers.bob;
+
+  console.log(`[FGA] Seeding tuples for user: ${userId} (email=${email || "n/a"}, isBob=${isBob})`);
 
   // All users: viewer on all-company docs
   await writeTuple(`user:${userId}`, "viewer", "document:handbook", tenant);
@@ -177,7 +186,7 @@ export async function seedTuplesForUser(userId, email, tenant) {
   await writeTuple("department:engineering", "viewer", "document:q3-roadmap", tenant);
   await writeTuple("department:engineering", "viewer", "document:product-spec-v2", tenant);
 
-  if (email?.startsWith("bob")) {
+  if (isBob) {
     // bob: all-company only, no engineering access
   } else {
     // alice + everyone else: engineering dept member (reads + can share engineering docs)

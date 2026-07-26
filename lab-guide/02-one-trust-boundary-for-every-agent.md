@@ -290,14 +290,18 @@ Use the **Run Checks** button at the bottom of this page. The in-app verifier co
 - The On-Behalf-Of Token Exchange toggle is active on your M2M client.
 
 > [!IMPORTANT]
-> One step requires manual confirmation in the Dashboard rather than a chat prompt to Nexus. Go to **Applications → Applications → Nexus Agent (DevCamp)**. Confirm the **client_id** shown is the metadata document URL and not an opaque UUID. This confirms the CIMD registration succeeded.
+> One step requires manual confirmation in the Dashboard rather than a chat prompt to Nexus. Go to **Applications → Applications → Nexus Agent (DevCamp)**. This screen shows two different IDs — don't confuse them:
+> - **Client ID**: Auth0's own internal identifier for the application record. This is always an opaque UUID, even for a CIMD app, and that's expected.
+> - **External Client ID** (or, on the API tab, wherever the CIMD **client_id** value is displayed): this is the one that must equal the metadata document URL. That's the field to check.
+>
+> Confirming the metadata-URL value on that second field — not the opaque UUID — is what tells you the CIMD registration succeeded.
 
 > [!TIP]
 > If a check fails, the result row shows the exact reason. Fix the flagged item and click **Re-run checks**.
 
 ## What you learned
 
-Every tool call now leaves the agent runtime, crosses a bearer-authenticated boundary, and is evaluated against the user's actual identity on a resource server that enforces FGA, Token Vault, and scope. The trust boundary moves from the agent backend to the MCP server. Concretely, you just walked through the full A4AA "Auth for MCP" pattern:
+Every tool call now leaves the agent runtime, crosses a bearer-authenticated boundary, and is evaluated against the user's actual identity on a resource server that enforces scope. The trust boundary moves from the agent backend to the MCP server. That same boundary is where FGA and Token Vault will plug in later — this module builds the identity pipe they both depend on, but doesn't wire either one up yet. Concretely, you just walked through the full A4AA "Auth for MCP" pattern:
 
 - **CIMD: stable published identity.** The CIMD native app gives the agent a URL-based identity that survives redeploys. Anyone can fetch it to learn what the agent is. With DCR (RFC 7591), a new opaque UUID is minted on every install and audit logs become meaningless across deploys. CIMD avoids both problems.
 - **M2M client: confidential OBO exchanger.** The M2M client is authorized against both the MCP API and the Backend API, and performs token exchanges with its own credentials. The **sub** from the user's token is preserved in the issued token so FGA and Token Vault evaluate identity against the human rather than the agent.
@@ -338,4 +342,4 @@ You should have successfully:
 
 The MCP server now has a trust boundary. Every caller is validated and every tool call is scoped to a resource and an identity. The next step is ensuring that identity is a verified employee, not just a token. *Every agent action has an owner* wires that.
 
-#### <span style="font-variant: small-caps>Let's move on to the next module!</span>
+#### <span style="font-variant: small-caps">Let's move on to the next module!</span>

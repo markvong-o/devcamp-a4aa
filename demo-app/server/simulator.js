@@ -128,7 +128,29 @@ function detectIntent(message) {
     };
   }
 
-  // get / open / read / show / retrieve -> get_document
+  // A single, specifically-named document ("the Q3 roadmap", "handbook") plus
+  // a fetch-this-one-thing verb (get/open/read/view/show/retrieve/pull) means
+  // the user wants that document's content, not a search across the corpus.
+  // Check this before the broader search catch-all below, since verbs like
+  // "read the Q3 roadmap" don't contain the literal substring "doc".
+  const namedDocumentId = extractDocumentId(message);
+  const fetchVerb =
+    lower.includes("get") ||
+    lower.includes("open") ||
+    lower.includes("read") ||
+    lower.includes("view") ||
+    lower.includes("show") ||
+    lower.includes("retrieve") ||
+    lower.includes("pull up") ||
+    lower.includes("full content");
+  if (namedDocumentId && fetchVerb) {
+    return {
+      toolName: "get_document",
+      parameters: { documentId: namedDocumentId },
+    };
+  }
+
+  // get / open / read / show / retrieve -> get_document (no specific doc named)
   if (
     lower.includes("get doc") ||
     lower.includes("open doc") ||

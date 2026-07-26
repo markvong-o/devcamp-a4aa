@@ -34,6 +34,13 @@
 //     /api/vault/* REST endpoints for the link/unlink UI.
 // =============================================================
 
+// Thrown when Auth0 explicitly rejects the federated-connection token
+// exchange (e.g. the connection is set to "Authentication only" and
+// isn't enabled for API access). Distinct from "live path not usable
+// in this environment" (missing config/localhost), which should fall
+// back to simulation instead of denying.
+export class TokenVaultAccessDeniedError extends Error {}
+
 const vault = new Map();
 
 // Auth0 federated-connection access tokens, cached per user+provider.
@@ -91,10 +98,15 @@ async function getLiveToken(userId, provider, tenant, userAccessToken) {
     });
 
     if (!response.ok) {
-      console.error(
-        `[Token Vault] (live) exchange failed for ${provider}: ${response.status} ${await response.text()}`
+      const body = await response.text();
+      console.error(`[Token Vault] (live) exchange failed for ${provider}: ${response.status} ${body}`);
+      // Auth0 rejects this exchange when the connection isn't enabled for
+      // API access (e.g. set to "Authentication only"). That's a real
+      // deny, not a "live path unavailable" signal -- don't swallow it
+      // into a fallback that would silently succeed via simulation.
+      throw new TokenVaultAccessDeniedError(
+        `Federated token exchange denied for ${provider}: ${response.status} ${body}`
       );
-      return null;
     }
 
     const data = await response.json();
@@ -103,6 +115,7 @@ async function getLiveToken(userId, provider, tenant, userAccessToken) {
     console.log(`[Token Vault] (live) federated token for ${userId} @ ${provider}`);
     return { token: data.access_token, provider };
   } catch (err) {
+    if (err instanceof TokenVaultAccessDeniedError) throw err;
     console.error(`[Token Vault] (live) exchange error for ${provider}: ${err.message}`);
     return null;
   }

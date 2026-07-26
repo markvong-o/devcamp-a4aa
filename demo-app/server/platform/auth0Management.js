@@ -271,6 +271,21 @@ export async function deployAction(ctx, actionId) {
   return await mgmt(ctx, "POST", `/actions/actions/${actionId}/deploy`);
 }
 
+// Actions build asynchronously after create/update. Deploying before the
+// build finishes gets rejected with "draft must be in the 'built' state".
+export async function waitForActionBuilt(ctx, actionId, { timeoutMs = 20000, intervalMs = 1500 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const action = await mgmt(ctx, "GET", `/actions/actions/${actionId}`);
+    if (action?.status === "built") return action;
+    if (action?.status === "failed") {
+      throw new Error(`Action ${actionId} failed to build`);
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  throw new Error(`Action ${actionId} did not reach 'built' state within ${timeoutMs}ms`);
+}
+
 export async function bindActionToPostLogin(ctx, actionId, displayName) {
   const current = await mgmt(ctx, "GET", "/actions/triggers/post-login/bindings");
   const bindings = (current?.bindings || []).map((b) => ({

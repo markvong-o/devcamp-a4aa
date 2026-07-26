@@ -103,6 +103,9 @@ Because the environment lives in the cloud, the list is short. You need:
 
 ## Launch your Codespace
 
+> [!IMPORTANT]
+> **Make sure you're logged into GitHub first.** If you're signed out, the repository page won't show a **Code** button with a **Codespaces** tab, and it's easy to assume something's broken. Log in at [github.com](https://github.com) before continuing.
+
 1. From the Launch Pad in the Lab Guide, open the repository link for the lab.
 
 ![GitHub repository page for the lab](images/00-codespace-repo-page.png)
@@ -202,6 +205,11 @@ npm run dev
 ```
 
 The Codespace will open a browser preview automatically. Because `.env` already has valid credentials, the app skips straight to the **Provision Resources** screen (Step 3 below).
+
+> [!WARNING]
+> **Auth0 login only works on port 5173 — not 3000.** `npm run dev` starts four processes (API on 3000, MCP on 3001, CRM mock on 3002, and the Vite frontend on 5173). Codespaces may pop up a "Your application running on port 3000 is available" prompt first; if you click through that one, you'll land on the API port instead of the app, and login will fail with a callback-URL mismatch (Auth0 is only configured to redirect to the 5173 URL). If a port pop-up appears, confirm it says **5173** before continuing — or open the **Ports** tab and open port **5173** directly.
+>
+> If no preview opens automatically, check for a notification asking whether to open the forwarded port in your browser and click **Open in Browser**. If you dismissed it, open the **Ports** tab, find port **5173**, and click the globe icon to open it manually.
 
 > [!NOTE]
 > **Started the app before adding your `.env` values?** You'll see a **setup screen** instead, showing the three environment variable names with a **Copy keys** button. Open `demo-app/.env` in the editor, paste the names, fill in the values from the Launch Pad, then stop the server (`Ctrl+C` in the terminal running `npm run dev`) and restart it with `npm run dev` so it picks up the change. The app will reload and advance to the next step automatically.

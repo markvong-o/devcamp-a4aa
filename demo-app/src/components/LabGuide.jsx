@@ -3,8 +3,8 @@ import { marked } from "marked";
 import { ModuleChecks } from "./ModuleChecks";
 import { useLabProgress } from "../hooks/useLabProgress";
 
-// Modules that have automated verification checks
-const CHECKABLE_MODULES = ["00", "01", "02", "03", "04", "05"];
+// Modules that show a Run Checks / knowledge-check / completion widget
+const CHECKABLE_MODULES = ["00", "01", "02", "03", "04", "05", "06"];
 
 export function LabGuide({ onClose }) {
   const [labs, setLabs] = useState([]);

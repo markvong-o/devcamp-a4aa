@@ -1422,6 +1422,7 @@ body {
   min-height: 100vh;
   background: #14091E;
   padding: 24px;
+  overflow-y: auto;
 }
 
 .setup-card {
@@ -1430,9 +1431,10 @@ body {
   border-radius: 16px;
   padding: 40px;
   max-width: 560px;
+  max-height: calc(100vh - 48px);
   width: 100%;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .setup-card::before {

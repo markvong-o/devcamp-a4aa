@@ -125,9 +125,15 @@ export class MCPClient {
     }
 
     const data = await response.json();
+    // Cap the cache TTL well under the token's actual lifetime. The lab's
+    // negative-test steps (e.g. "Missing scope") change a client's Auth0
+    // authorized scopes live in the Dashboard and expect the *next* tool
+    // call to reflect it -- a long-lived cache would mask that change
+    // until the token naturally expired.
+    const cacheTtlMs = Math.min(data.expires_in - 60, 300) * 1000;
     cachedTokens.set(cacheKey, {
       token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+      expiresAt: Date.now() + cacheTtlMs,
     });
 
     console.log("[MCP Client] Token exchange successful -- MCP token acquired");
