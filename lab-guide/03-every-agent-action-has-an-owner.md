@@ -114,7 +114,7 @@ const { loginWithRedirect, isLoading } = useAuth0();
 > [!IMPORTANT]
 > **Log in now.** In the Nexus app, click **Log In** and sign in as `alice@docagent.demo` / `DevCamp1!` (from Prerequisites). This is the first time you're using these credentials, and everything from here on assumes you're logged in.
 >
-> Guardian push MFA is enforced tenant-wide, so login also triggers an MFA enrollment or challenge. The first time, you'll be prompted to enroll a device in the Auth0 Guardian app; after that, expect a push challenge on every login. This is required — the Checkpoint below fails without it.
+> Guardian push MFA is enforced tenant-wide, so login also triggers an MFA enrollment or challenge. The first time, you'll be prompted to enroll a device in the Auth0 Guardian app; after that, expect a push challenge on every login. This is required. The Checkpoint below fails without it.
 
 ### Step 4: The access token is attached to **/api/chat**
 

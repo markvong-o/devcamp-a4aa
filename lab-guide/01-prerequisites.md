@@ -207,9 +207,9 @@ npm run dev
 The Codespace will open a browser preview automatically. Because `.env` already has valid credentials, the app skips straight to the **Provision Resources** screen (Step 3 below).
 
 > [!NOTE]
-> **Auth0 login only works on port 5173 — not 3000.** `npm run dev` starts four processes: the API on 3000, MCP on 3001, the CRM mock on 3002, and the Vite frontend on 5173. The Codespace is preconfigured to open port 5173 automatically and keep the other three quiet in the background, so this should just work.
+> **Auth0 login only works on port 5173, not 3000.** `npm run dev` starts four processes: the API on 3000, MCP on 3001, the CRM mock on 3002, and the Vite frontend on 5173. The Codespace is preconfigured to open port 5173 automatically and keep the other three quiet in the background, so this should just work.
 >
-> If no preview opens automatically, or you're running locally instead of in the Codespace (where this auto-config doesn't apply), open the **Ports** tab, find port **5173**, and click the globe icon to open it manually. Watch out for any port pop-up that names a different port number (like 3000) — that's an internal service, not the app, and login will fail with a callback-URL mismatch if you open it (Auth0 is only configured to redirect to the 5173 URL).
+> If no preview opens automatically, or you're running locally instead of in the Codespace (where this auto-config doesn't apply), open the **Ports** tab, find port **5173**, and click the globe icon to open it manually. Watch out for any port pop-up that names a different port number (like 3000). That's an internal service, not the app, and login will fail with a callback-URL mismatch if you open it. Auth0 is only configured to redirect to the 5173 URL.
 
 > [!NOTE]
 > **Started the app before adding your `.env` values?** You'll see a **setup screen** instead, showing the three environment variable names with a **Copy keys** button. Open `demo-app/.env` in the editor, paste the names, fill in the values from the Launch Pad, then stop the server (`Ctrl+C` in the terminal running `npm run dev`) and restart it with `npm run dev` so it picks up the change. The app will reload and advance to the next step automatically.

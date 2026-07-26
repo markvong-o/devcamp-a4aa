@@ -139,7 +139,7 @@ Relationship-based authorization handles the real shape of a knowledge organizat
 You observed this implementation rather than building it yourself. The same **sub**-keyed decision you saw the store make has been firing inside the MCP server since *One trust boundary for every agent*. Token Vault, from *The agent acts as the employee, not a shared bot*, minted CRM credentials for the users FGA just authorized, and CIBA, from *Humans approve what can't be undone*, gated irreversible shares on the same identity. All five controls key off the same **sub**.
 
 > [!NOTE]
-> This module has no **Run Checks** button — instead, the Nexus app asks a short knowledge-check question about *why* Alice can read the Q3 roadmap and Bob can't. Answer it correctly to unlock the module.
+> This module has no **Run Checks** button. Instead, the Nexus app asks a short knowledge-check question about *why* Alice can read the Q3 roadmap and Bob can't. Answer it correctly to unlock the module.
 
 #### <span style="font-variant: small-caps">Congrats!</span>
 
