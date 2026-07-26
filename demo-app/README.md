@@ -1,6 +1,6 @@
 # Nexus (A4AA): demo-app
 
-This is the Nexus devcamp lab's application code. Each participant runs their own copy, in GitHub Codespaces or locally, against their own Auth0 tenant provisioned with one click from inside the app. This is the only living copy of the app: there is no separate starter/solution tree, so participants read [`../lab-guide/`](../lab-guide/) and inspect this codebase directly.
+This is the Nexus devcamp lab's application code. Each participant runs their own copy in GitHub Codespaces against their own Auth0 tenant, provisioned with one click from inside the app. This is the only living copy of the app: there is no separate starter/solution tree, so participants read [`../lab-guide/`](../lab-guide/) and inspect this codebase directly. (Running locally instead of Codespaces is possible but not recommended; see "Running locally" below.)
 
 The business case is straightforward: a participant opens a Codespace, clicks one button, and has a fully-configured Nexus environment in minutes rather than an afternoon of manual Dashboard setup.
 
@@ -15,7 +15,7 @@ An earlier local-dev iteration of this workshop (separate `starter/`/`solution/`
 | API + MCP JWT validation | Validator built from the tenant's issuer + audience, read from environment |
 | Auth0 objects | Provisioned with one click from the in-app **Provision Resources** screen |
 | CIBA / FGA / Token Vault | Live Auth0 when provisioned, in-memory simulation as fallback |
-| Serving | `npm run dev` in a GitHub Codespace or locally; `build` + `start` and a Dockerfile also available |
+| Serving | `npm run dev` in a GitHub Codespace (locally works but loses live Token Vault); `build` + `start` and a Dockerfile also available |
 
 ## Architecture
 
@@ -77,7 +77,11 @@ function simCanRead(userKey, docKey) {
 }
 ```
 
-Tuples are seeded once per user on first login (`seedTuplesForUser()`), branched by email so the two demo users produce different access decisions: `alice@docagent.demo` gets `member` on `department:engineering` plus `editor` on the engineering docs, `bob@docagent.demo` gets only the all-company `viewer` tuples. `compensation-q3` and `board-deck-q3` are never seeded for anyone, so they're a clean FGA deny for both users. That's the intentional negative-test path in Module 06.
+Tuples are seeded on first tool call per user (`seedTuplesForUser()`), branched by identity so the two demo users produce different access decisions: `alice@docagent.demo` gets `member` on `department:engineering` plus `editor` on the engineering docs, `bob@docagent.demo` gets only the all-company `viewer` tuples. `compensation-q3` and `board-deck-q3` are never seeded for anyone, so they're a clean FGA deny for both users. That's the intentional negative-test path in Module 06.
+
+Access tokens for a custom API audience don't carry an `email` claim by default, so the branch can't rely on that. It matches the user's `sub` against `deploymentData.demo_users` (the demo user IDs recorded at provisioning time in `provision.js`), falling back to email only if a token happens to carry one. Seeding also self-corrects rather than caching a plain "already seeded" boolean: it re-derives the user's identity on every call and, if that identity differs from what was seeded last time, removes the stale tuples and writes the correct ones. That matters because `demoUsers.bob` only round-trips through `.env` after a provisioning run (see `deploymentDataToEnvVars()`), so a user seeded before that data existed would otherwise keep incorrect grants for the life of the process.
+
+The current tuple graph is inspectable at runtime via the **FGA Tuples** tab in the app (`GET /api/fga/tuples`, `listTuples()` in `client.js`), which shows `live: true` with an empty list when a real FGA store is provisioned, since those tuples live in Okta FGA rather than this process.
 
 ## Repository layout
 
@@ -85,7 +89,6 @@ Tuples are seeded once per user on first login (`seedTuplesForUser()`), branched
 demo-app/
 ├── README.md                     ← you are here
 ├── Dockerfile                    ← single-host production image
-├── .env.sample                   ← all vars, documented
 ├── package.json                  ← dev / build / start scripts
 │
 ├── scripts/
@@ -96,6 +99,9 @@ demo-app/
 ├── server/
 │   ├── index.js                  ← API :3000, mounts hooks + tenant middleware + /api/config + static SPA
 │   ├── llm.js                    ← OpenAI tool-calling loop, tenant-threaded
+│   ├── llm/
+│   │   ├── prompts.js             ← system prompt for the real-LLM path
+│   │   └── tools.js               ← tool registry converted to OpenAI function-calling format
 │   ├── simulator.js              ← pattern-matching fallback when no API key
 │   │
 │   ├── platform/
@@ -108,8 +114,8 @@ demo-app/
 │   │   └── jwt.js                ← per-(issuer,audience) JWT validator cache + token decode helpers
 │   │
 │   ├── middleware/
-│   │   ├── auth.js               ← [Module 03] JWT validation
-│   │   ├── agent-auth.js         ← [Module 02] MCP bearer token validation
+│   │   ├── auth.js               ← [Module 03] JWT validation for /api/*
+│   │   ├── agent-auth.js         ← per-tool scope + CIBA consent check (checkToolAuthorization)
 │   │   └── ciba.js               ← [Module 05] live /bc-authorize + poll, simulation fallback
 │   │
 │   ├── fga/
@@ -133,47 +139,73 @@ demo-app/
 │   │   └── registry.js           ← framework-agnostic tool definitions shared by llm.js + simulator.js
 │   │
 │   ├── utils/
-│   │   └── port.js               ← port resolution helper
+│   │   ├── port.js               ← port resolution helper
+│   │   └── wrongPortPage.js      ← themed fallback page when the API/MCP/CRM ports are opened directly
 │   │
-│   └── routes/guide.js           ← serves the in-app lab guide markdown
+│   └── routes/guide.js           ← serves in-app lab guide markdown; LABS maps file → internal module id → title
 │
 └── src/                          ← React frontend (Vite + JS)
-    ├── App.jsx                   ← auth gate, layout shell, setup orchestration
+    ├── App.jsx                   ← auth gate, layout shell, tab switcher
     ├── main.jsx                  ← RuntimeConfigProvider → Auth0Provider → App
     ├── config/runtimeConfig.jsx  ← fetches /api/config, gates render
     ├── auth/Auth0Provider.jsx    ← consumes runtime config (no VITE_AUTH0_* at build time)
     ├── components/
-    │   ├── Chat.jsx               ← chat surface
-    │   ├── Message.jsx            ← user / assistant message bubbles
+    │   ├── Chat.jsx               ← chat surface + suggested-prompt chips
+    │   ├── Message.jsx            ← user / assistant bubbles, tool-call chips (success / denied / error)
     │   ├── ToolApproval.jsx       ← CIBA binding-message approval card
     │   ├── ToolLogs.jsx           ← live tool call event panel
-    │   ├── ToolTester.jsx         ← manual tool testing UI
+    │   ├── ToolTester.jsx         ← manual tool testing UI (direct tool + params, bypasses NL intent)
+    │   ├── FGATuples.jsx          ← live view of the simulated FGA tuple graph (/api/fga/tuples)
     │   ├── MCPStatus.jsx          ← MCP server connection status indicator
-    │   ├── LabGuide.jsx           ← in-app lab guide viewer
+    │   ├── LabGuide.jsx           ← in-app lab guide viewer, renders lab-guide/*.md
+    │   ├── ModuleChecks.jsx       ← per-module Run Checks verifier + the Module 06 FGA quiz
+    │   ├── ProgressTracker.jsx    ← "Lab Progress" sidebar, one row per module, embeds ModuleChecks
+    │   ├── Module01Panel.jsx      ← CIMD + M2M credential setup UI for Auth for MCP (Module 02)
+    │   ├── VaultStatus.jsx        ← Connected Accounts / Token Vault link status + Connect button
     │   ├── LoginScreen.jsx        ← pre-auth landing screen
     │   ├── SetupBanner.jsx        ← environment variable setup screen
-    │   └── ProvisionPanel.jsx     ← Auth0 resource provisioning screen
-    └── hooks/useChat.js          ← chat state + CIBA polling, uses runtime audience
+    │   ├── ProvisionPanel.jsx     ← Auth0 resource provisioning screen
+    │   └── RestartLabButton.jsx   ← calls /api/setup/restart to deprovision + reset local progress
+    ├── hooks/
+    │   ├── useChat.js             ← chat state + CIBA polling, uses runtime audience
+    │   └── useLabProgress.jsx     ← per-module pass/fail state, persisted to localStorage
+    └── styles/
+        ├── index.css              ← app theme (dark, purple accent) + all component styles
+        └── lab-guide.css          ← styling for the rendered lab guide markdown
 ```
+
+Module numbering note: `ModuleChecks`/`ProgressTracker` use an internal 0-indexed `moduleId` ("00".."06") that is one behind the lab guide files' own number prefix, since `00-introduction.md` has no automated check. `server/routes/guide.js`'s `LABS` array is the single source of truth mapping a real `lab-guide/*.md` filename to that internal id and to the display title shown in the guide viewer.
 
 ## Running
 
-### GitHub Codespaces or local
+### GitHub Codespaces (recommended, and how the lab is delivered)
 
-This is how the lab is actually delivered: one participant runs one Codespace (or a local checkout) against one Auth0 tenant.
+One participant runs one Codespace against one Auth0 tenant. This is the only supported path: Codespaces gives every process a real, publicly reachable HTTPS URL, which several modules depend on (see "Running locally" below for why that matters).
 
 ```bash
-cp .env.sample .env
-# fill in AUTH0_DOMAIN, AUTH0_MGMT_CLIENT_ID, AUTH0_MGMT_CLIENT_SECRET
+touch .env
+# add AUTH0_DOMAIN, AUTH0_MGMT_CLIENT_ID, AUTH0_MGMT_CLIENT_SECRET
 npm install
 npm run dev
 ```
 
+There's no `.env.sample` to copy; create the file yourself. If you start the app before adding these three values, the setup screen tells you exactly which ones are missing.
+
 `npm run dev` boots Vite (frontend) plus the Express API on :3000, the MCP server on :3001, and the CRM mock on :3002. Without an `OPENAI_API_KEY` the agent uses the deterministic pattern-matching simulator. See [`../lab-guide/01-prerequisites.md`](../lab-guide/01-prerequisites.md) for the full participant-facing walkthrough, including where the initial `.env` values come from and the in-app **Provision Resources** step.
+
+### Running locally (not recommended)
+
+The same `npm install && npm run dev` works against `localhost`, but plan on losing functionality, not just convenience. Auth0 is a cloud service: it cannot open a connection to your laptop, so anything that depends on Auth0 (or a browser redirect flow) reaching *back into* the app breaks the moment there's no public URL for it to reach:
+
+- **Token Vault's live federated CRM exchange (Module 04) does not work at all.** The CRM mock's OAuth2 endpoints run on `localhost:3002`, and Auth0 cannot call back to it to complete the flow. The app falls back to the in-memory simulation automatically, so the module still runs, but you're exercising the fallback path, not the real integration.
+- Anyone testing from a different machine, or comparing notes with another participant, cannot reach your `localhost` origin at all.
+- Every other module (login, MCP OBO exchange, CIBA, FGA) still works locally, since those don't require Auth0 to call back into the app.
+
+Use this for quick edit-and-reload iteration on code that doesn't touch Token Vault, not as a substitute for the Codespace when actually working through the lab or demoing it end to end.
 
 ### Environment variables
 
-Every variable is documented in [`.env.sample`](./.env.sample). The short version:
+Only `AUTH0_DOMAIN`, `AUTH0_MGMT_CLIENT_ID`, and `AUTH0_MGMT_CLIENT_SECRET` need to be set by hand; everything else below gets written to `.env` automatically by the in-app **Provision Resources** step. The full set:
 
 | Group | Vars |
 |---|---|
@@ -184,7 +216,7 @@ Every variable is documented in [`.env.sample`](./.env.sample). The short versio
 | CRM connection (Module 04) | `CRM_CLIENT_ID`, `CRM_CLIENT_SECRET` |
 | LLM | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `LLM_MODEL` |
 
-`.env*` is gitignored; only `.env.sample` is tracked.
+`.env*` is entirely gitignored; there is no sample file committed to the repo. Create `.env` yourself (see "Running" above).
 
 ## What's live vs. simulated
 

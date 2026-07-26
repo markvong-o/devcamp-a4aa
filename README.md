@@ -33,19 +33,19 @@ devcamp-a4aa/
 │   ├── images/                   ← Dashboard screenshots referenced by the guides
 │   ├── 00-introduction.md        ← mission briefing (read during kickoff)
 │   ├── 01-prerequisites.md       ← Module 01 (environment setup + tenant provisioning)
-│   ├── 02-auth-for-mcp.md        ← Module 02 (keystone)
-│   ├── 03-user-authentication.md ← Module 03
-│   ├── 04-token-vault.md         ← Module 04
-│   ├── 05-ciba.md                ← Module 05
-│   ├── 06-fine-grained-authorization.md ← Module 06 (FGA live demo, witnessed)
-│   ├── 07-end-to-end.md          ← closing end-to-end run
+│   ├── 02-one-trust-boundary-for-every-agent.md         ← Module 02, Auth for MCP (keystone)
+│   ├── 03-every-agent-action-has-an-owner.md            ← Module 03, User Authentication
+│   ├── 04-the-agent-acts-as-the-employee,-not-a-shared-bot.md ← Module 04, Token Vault
+│   ├── 05-humans-approve-what-can't-be-undone.md        ← Module 05, CIBA
+│   ├── 06-access-that-knows-where-it-ends.md            ← Module 06, FGA live demo (witnessed)
+│   ├── 07-putting-it-all-together.md                    ← closing end-to-end run
 │   └── 99-conclusion.md          ← wrap-up (what you shipped, next steps)
 │
-├── demo-app/                     ← the application, run via GitHub Codespaces or locally
+├── demo-app/                     ← the application, run via GitHub Codespaces
 └── mock-crm-service/             ← standalone CRM OAuth2 mock, deployable to Vercel (Module 04 upstream)
 ```
 
-There is a single living application tree: **`demo-app/`**. Each participant runs their own copy in GitHub Codespaces (or locally, if they prefer) against their own provisioned Auth0 tenant. Participants work directly against `demo-app/`, guided by `lab-guide/`.
+There is a single living application tree: **`demo-app/`**. Each participant runs their own copy in GitHub Codespaces against their own provisioned Auth0 tenant. Participants work directly against `demo-app/`, guided by `lab-guide/`.
 
 ### `demo-app/`
 
@@ -65,11 +65,12 @@ A standalone, Vercel-deployable mock CRM OAuth2 server and activities API. `demo
 
 ### First-time setup
 
-The lab is built to run in **GitHub Codespaces** — open the repository, start a Codespace, and Node, the editor, and dependencies are already there. It runs identically on your own machine if you'd rather work locally (Node 20+ required); the commands are the same either way.
+The lab is built to run in **GitHub Codespaces**: open the repository, start a Codespace, and Node, the editor, and dependencies are already there. This is the only supported path. Auth0 needs a real, publicly reachable URL to call back into for some modules (Token Vault's live CRM exchange in particular), which a local `localhost` setup can't provide; see "Running locally" in [`demo-app/README.md`](./demo-app/README.md#running-locally-not-recommended) if you still want to run it that way for quick iteration.
 
 ```bash
 cd demo-app
-cp .env.sample .env
+touch .env
+# add AUTH0_DOMAIN, AUTH0_MGMT_CLIENT_ID, AUTH0_MGMT_CLIENT_SECRET
 npm install
 npm run dev
 ```
