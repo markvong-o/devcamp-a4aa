@@ -76,6 +76,8 @@ If at any point, you need guidance from any of our lab assistants, please click 
 
 Above, you activated your Auth0 tenant. The lab is designed to run in **GitHub Codespaces**, a cloud development environment that opens in your browser. There is nothing to install and everything should be pre-configured. *The application may run locally on your own machine if you prefer (Node.js 20+ required).* The steps below are the same either way.
 
+![Nexus system architecture: the whole app, including the API, MCP server, and CRM mock, runs inside one GitHub Codespace or locally, with only Auth0, FGA, and the LLM external](images/architecture.png)
+
 > [!NOTE]
 > **Running locally instead of Codespaces?** 
 > 1. Clone the repository
