@@ -30,6 +30,7 @@ import { getToken } from "./token-vault/vault.js";
 import { startCRMServer } from "./crm/app.js";
 import { startMCPServer, TOOLS as MCP_TOOLS } from "./mcp/server.js";
 import { getLogs } from "./mcp/toolLog.js";
+import { listTuples } from "./fga/client.js";
 import { executeTool } from "./tools/registry.js";
 import { getClientMetadata } from "./mcp/cimd.js";
 import { getManagementToken } from "./platform/auth0Management.js";
@@ -48,6 +49,7 @@ const PROVISIONED_ENV_KEYS = [
   "AUTH0_CIBA_CLIENT_ID", "AUTH0_CIBA_CLIENT_SECRET",
   "AUTH0_MFA_ACTION_ID",
   "VAULT_CONN_CRM", "FGA_STORE_ID", "FGA_MODEL_ID",
+  "DEMO_USER_ALICE_ID", "DEMO_USER_BOB_ID",
 ];
 
 // Remove specific keys from the .env file and from process.env.
@@ -774,6 +776,14 @@ app.get("/api/mcp/status", (_req, res) => {
 // Logs: recent tool call log entries written by the MCP server.
 app.get("/api/mcp/logs", (_req, res) => {
   res.json({ logs: getLogs() });
+});
+
+// FGA: current simulated tuple graph for this tenant (Lab 06). Only
+// meaningful in simulated mode -- when a live FGA store is provisioned,
+// `live: true` comes back with an empty tuple list, since those tuples
+// live in Okta FGA, not in this process.
+app.get("/api/fga/tuples", (req, res) => {
+  res.json(listTuples(req.tenant));
 });
 
 // Test: direct authenticated tool call. The user's access token is used

@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > This module is the one piece you **watch** rather than configure. In previous modules you enabled Dashboard settings and walked through the implementation. In this module there is nothing to enable and nothing to read. Just run the prompts and watch the authorization model enforce access decisions live. FGA is already provisioned and enforced for your tenant.
 
-## Objective *(~10 min)*
+## Objective *(~20 min)*
 
 Nexus gives every user access to the company knowledge base, but not all of it. An engineer should read engineering documents, and someone in sales should not read HR compensation data. Reading a document is also not the same as sharing it externally.
 

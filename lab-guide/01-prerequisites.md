@@ -1,4 +1,4 @@
-## Sign in to your Auth0 account
+## Sign in to your Auth0 account *(~20 min)*
 
 As part of the provisioning process for your Auth0 tenant, an Auth0 admin was created that corresponds to the email address you used to sign in to this very platform (https://labs.demo.okta.com).
 

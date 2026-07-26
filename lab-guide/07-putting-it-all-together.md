@@ -1,6 +1,6 @@
 Five core modules built five layers of control. This closing run drives the full Nexus workflow and confirms every layer fires in one sequence.
 
-## Objectives
+## Objectives *(~20 min)*
 
 - Drive Nexus through a happy-path document workflow as Alice.
 - Drive a second sequence that trips CIBA (external document share).

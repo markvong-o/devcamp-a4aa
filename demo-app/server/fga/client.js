@@ -156,6 +156,18 @@ function logDecision(user, relation, object, allow) {
   return allow;
 }
 
+// Debug/inspection: snapshot of the current simulated tuple graph, for
+// the FGA Tuples panel in the app UI. When the tenant has a live FGA
+// store provisioned, tuples live in Okta FGA instead of this in-memory
+// array, so there's nothing meaningful to return here for that case.
+export function listTuples(tenant) {
+  const live = liveFgaForTenant(tenant);
+  return {
+    live: !!live,
+    tuples: live ? [] : tupleStore.map((t) => ({ ...t })),
+  };
+}
+
 // ---- Seeding & reads --------------------------------------------
 
 const seededUsers = new Set();

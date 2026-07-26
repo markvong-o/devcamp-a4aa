@@ -1,4 +1,4 @@
-## Objective *(~15 min)*
+## Objective *(~20 min)*
 
 Nexus needs to log document activity to the CRM under the employee's own identity. A single bot token creates operational risk: one blast radius for every user, no audit trail tied to the individual, and a manual rotation burden each time someone leaves.
 

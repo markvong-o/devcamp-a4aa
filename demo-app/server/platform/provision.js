@@ -340,5 +340,11 @@ export function deploymentDataToEnvVars(dd) {
   if (dd.mfa_action_id) vars.AUTH0_MFA_ACTION_ID = dd.mfa_action_id;
   if (dd.fga_store_id) vars.FGA_STORE_ID = dd.fga_store_id;
   if (dd.fga_model_id) vars.FGA_MODEL_ID = dd.fga_model_id;
+  // Persisted so the FGA seeding branch (alice vs. bob access) still works
+  // after a restart -- deploymentData.demo_users otherwise only lives in
+  // memory and is lost the moment the server restarts (which happens
+  // automatically right after provisioning).
+  if (dd.demo_users?.alice) vars.DEMO_USER_ALICE_ID = dd.demo_users.alice;
+  if (dd.demo_users?.bob) vars.DEMO_USER_BOB_ID = dd.demo_users.bob;
   return vars;
 }

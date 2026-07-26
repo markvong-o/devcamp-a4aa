@@ -1,4 +1,4 @@
-## Objective *(~25 min)*
+## Objective *(~20 min)*
 
 This module wires the mechanism that makes everything downstream possible: registering Nexus's MCP server as an Auth0 resource and giving the first-party Nexus agent two things it needs to call tools on behalf of users. The first is a stable published identity via CIMD (Client ID Metadata Documents). The second is a confidential M2M client that performs the OBO token exchange. Once both are in place, every tool call carries the employee's **sub** all the way to tool execution, and Token Vault, CIBA, and FGA all have the identity they need to enforce policy.
 
