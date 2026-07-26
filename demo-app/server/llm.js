@@ -145,9 +145,12 @@ export async function processMessage(message, conversationHistory, user, tenant)
 
     const finalMessage = followUp.choices[0].message.content || "";
 
+    // Same distinction as the simulator path -- a business-logic denial
+    // (FGA, missing scope, disabled Token Vault connection, etc) is not
+    // the same as the call failing outright.
     return {
       message: finalMessage,
-      toolCalls: [{ tool: toolName, result, status: "success" }],
+      toolCalls: [{ tool: toolName, result, status: result?.success === false ? "denied" : "success" }],
     };
   } catch (error) {
     console.warn(`[LLM] Error: ${error.message}, falling back to simulator`);

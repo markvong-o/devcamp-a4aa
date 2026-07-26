@@ -51,14 +51,21 @@ Five core modules built five layers of control. This closing run drives the full
 ### FGA deny: outside department
 
 - Log in as Bob (**`bob@docagent.demo`** / **`DevCamp1!`**).
-- Prompt: *"Show me the Q3 roadmap."*
+- Prompt: *"Show me the Q3 roadmap."* (Clicking the **Find the Q3 roadmap** suggestion chip also works, but routes to a different tool, per the note below.)
 - Expected: **[FGA] Check: user:auth0|<bob_sub> can_read document:q3-roadmap -> DENIED**. No content returns.
+
+> [!NOTE]
+> Depending on the exact wording, this can route to either **get_document** or **search_documents**, and they handle denial differently by design. When you call **get_document** (triggered by "show", "open", "read", etc. plus a specific document name), it returns an explicit **{ success: false, error: "Access denied..." }** and logs the **DENIED** line. When you call **search_documents** (triggered by "find", "search", or the **Find the Q3 roadmap** chip), it never returns an explicit error. Instead, it silently filters denied documents out of the results, so you see **{ success: true, results: [], total: 0 }** with no "Access denied" message.
+>
+> This difference is intentional. A search that explicitly denies a match would leak information to Bob by confirming that a document exists matching his query. He would only know it's one he cannot access. By filtering silently, "nothing found" becomes indistinguishable from "nothing exists," which protects information without surfacing an error. **get_document**, by contrast, is asking for one specific, named resource. A clear explicit denial on a known, named document does not disclose anything Bob did not already know to ask for.
 
 ### FGA deny: confidential document
 
 - Logged in as Alice or Bob.
 - Prompt: *"Find the compensation review."*
-- Expected: **search_documents** returns zero results. **get_document** with **documentId: compensation-q3** returns **Access denied**.
+- Expected: **search_documents** returns zero results (**{ success: true, results: [], total: 0 }**, same silent-filtering behavior as above, no explicit error).
+- To see the explicit **get_document** denial for the same document, either prompt *"Show me the compensation review"* instead, or open the **Tool Tester** tab and call **get_document** directly with **documentId: compensation-q3**.
+- Expected there: **{ success: false, error: "Access denied..." }** and an **[FGA] Check: ... can_read document:compensation-q3 -> DENIED** log line.
 
 ### FGA deny: share as viewer
 

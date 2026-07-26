@@ -478,7 +478,8 @@ body {
   border: 1px solid #1e4a2a;
 }
 
-.tool-call--error {
+.tool-call--error,
+.tool-call--denied {
   background: #1f0d0d;
   border: 1px solid #4a1e1e;
 }
@@ -506,7 +507,8 @@ body {
 }
 
 .tool-call-icon--success { color: #4caf70; }
-.tool-call-icon--error   { color: #cf6679; }
+.tool-call-icon--error,
+.tool-call-icon--denied  { color: #cf6679; }
 
 .tool-call-name {
   font-family: "SF Mono", "Fira Code", monospace;

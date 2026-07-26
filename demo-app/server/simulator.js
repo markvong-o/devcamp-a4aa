@@ -76,9 +76,13 @@ export async function processMessage(message, _conversationHistory, user, tenant
     if (authResult.tool?.requiresConsent) {
       revokeConsent(user.sub, intent.toolName);
     }
+    // The MCP call itself succeeded (no exception), but the tool's own
+    // result can still be a business-logic denial (FGA, missing scope,
+    // Token Vault refusing a disabled connection, etc). Surface that as
+    // its own status so the UI doesn't show a denied call as a success.
     return {
       message: formatToolResponse(intent.toolName, result),
-      toolCalls: [{ tool: intent.toolName, result, status: "success" }],
+      toolCalls: [{ tool: intent.toolName, result, status: result?.success === false ? "denied" : "success" }],
     };
   } catch (error) {
     return {
