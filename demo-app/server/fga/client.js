@@ -83,6 +83,33 @@ export async function writeTuple(user, relation, object, tenant) {
   }
 }
 
+// Undoes a writeTuple. Needed so seeding can correct a user's grants if
+// their computed identity (isBob) changes between seed attempts -- e.g.
+// after a code fix -- without requiring a full server restart to clear
+// the in-memory tuple store.
+export async function removeTuple(user, relation, object, tenant) {
+  const live = liveFgaForTenant(tenant);
+  if (live) {
+    try {
+      await live.write({ deletes: [{ user, relation, object }] });
+      console.log(`[FGA] (live) Tuple removed: ${user} is ${relation} of ${object}`);
+    } catch (err) {
+      if (!/not found|no such/i.test(err?.message || "")) {
+        console.error(`[FGA] (live) delete failed: ${err.message}`);
+      }
+    }
+    return;
+  }
+
+  const idx = tupleStore.findIndex(
+    (t) => t.user === user && t.relation === relation && t.object === object
+  );
+  if (idx !== -1) {
+    tupleStore.splice(idx, 1);
+    console.log(`[FGA] Tuple removed: ${user} is ${relation} of ${object}`);
+  }
+}
+
 // ---- Simulated check helpers ------------------------------------
 
 function hasDirect(user, relation, object) {
@@ -170,7 +197,13 @@ export function listTuples(tenant) {
 
 // ---- Seeding & reads --------------------------------------------
 
-const seededUsers = new Set();
+// Tracks the isBob value we last seeded each user under, not just
+// "have we seeded them" -- a plain seen-once guard would mean a user
+// seeded incorrectly (e.g. before a code fix landed) keeps their stale
+// tuples forever, since seeding would never run for them again for the
+// life of the process. Keying on the computed identity lets seeding
+// re-run and self-correct if that computation changes.
+const seededUsers = new Map();
 
 // Seed demo tuples branched by identity so the FGA differentiation is visible:
 //   alice -> engineering dept member (reads all-company + engineering docs, can share)
@@ -183,10 +216,11 @@ const seededUsers = new Set();
 // `userId` against the demo user IDs recorded at provisioning time so Bob
 // still gets the restricted branch even without an email claim.
 export async function seedTuplesForUser(userId, email, tenant) {
-  if (seededUsers.has(userId)) return;
-
   const demoUsers = tenant?.deploymentData?.demo_users || {};
   const isBob = email ? email.startsWith("bob") : userId === demoUsers.bob;
+
+  if (seededUsers.get(userId) === isBob) return;
+  seededUsers.set(userId, isBob);
 
   console.log(`[FGA] Seeding tuples for user: ${userId} (email=${email || "n/a"}, isBob=${isBob})`);
 
@@ -199,7 +233,11 @@ export async function seedTuplesForUser(userId, email, tenant) {
   await writeTuple("department:engineering", "viewer", "document:product-spec-v2", tenant);
 
   if (isBob) {
-    // bob: all-company only, no engineering access
+    // bob: all-company only, no engineering access. Explicitly remove
+    // these in case an earlier (now-corrected) seed run granted them.
+    await removeTuple(`user:${userId}`, "member", "department:engineering", tenant);
+    await removeTuple(`user:${userId}`, "editor", "document:q3-roadmap", tenant);
+    await removeTuple(`user:${userId}`, "editor", "document:product-spec-v2", tenant);
   } else {
     // alice + everyone else: engineering dept member (reads + can share engineering docs)
     await writeTuple(`user:${userId}`, "member", "department:engineering", tenant);
@@ -208,8 +246,6 @@ export async function seedTuplesForUser(userId, email, tenant) {
   }
 
   // compensation-q3 and board-deck-q3 intentionally never seeded -> FGA deny
-
-  seededUsers.add(userId);
 }
 
 export function getDocument(docId) {
