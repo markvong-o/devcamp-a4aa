@@ -45,8 +45,9 @@ import {
   seedTuplesForUser,
   DOCUMENTS,
 } from "../fga/client.js";
-import { getToken, seedVaultForUser } from "../token-vault/vault.js";
+import { getToken, seedVaultForUser, TokenVaultAccessDeniedError } from "../token-vault/vault.js";
 import { addLog } from "./toolLog.js";
+import { wrongPortFallback } from "../utils/wrongPortPage.js";
 
 const app = express();
 app.use(express.json());
@@ -294,7 +295,18 @@ async function executeToolLogic(name, args, userSub, tenant, userAccessToken) {
       const { action, documentId, documentTitle, notes } = args;
       // Lab 03 (Token Vault) -- getToken exchanges for a short-lived
       // CRM credential scoped to this user. No shared bot token.
-      const tokenResult = await getToken(userSub, "crm", tenant, userAccessToken);
+      let tokenResult;
+      try {
+        tokenResult = await getToken(userSub, "crm", tenant, userAccessToken);
+      } catch (err) {
+        if (err instanceof TokenVaultAccessDeniedError) {
+          return {
+            success: false,
+            error: "CRM connection does not allow API access (it's set to authentication-only). Ask the user to enable API access for this connection, or reconnect via Connected Accounts.",
+          };
+        }
+        throw err;
+      }
       if (!tokenResult) {
         return {
           success: false,
@@ -347,6 +359,17 @@ async function executeToolLogic(name, args, userSub, tenant, userAccessToken) {
       throw new Error(`Unknown tool: ${name}`);
   }
 }
+
+// Anyone hitting this port directly in a browser (e.g. a mis-clicked
+// Codespaces port-forward toast) gets a themed notice instead of a bare
+// 404 -- the real app is Vite on 5173.
+app.get(
+  "*",
+  wrongPortFallback(
+    "Nexus MCP server",
+    "This server exposes tools to the agent over a bearer-authenticated API."
+  )
+);
 
 // express-oauth2-jwt-bearer sets err.status = 401 on auth failures.
 // Without this handler Express would fall back to a 500, breaking the

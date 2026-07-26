@@ -30,6 +30,7 @@ import { getToken } from "./token-vault/vault.js";
 import { startCRMServer } from "./crm/app.js";
 import { startMCPServer, TOOLS as MCP_TOOLS } from "./mcp/server.js";
 import { getLogs } from "./mcp/toolLog.js";
+import { listTuples } from "./fga/client.js";
 import { executeTool } from "./tools/registry.js";
 import { getClientMetadata } from "./mcp/cimd.js";
 import { getManagementToken } from "./platform/auth0Management.js";
@@ -40,6 +41,7 @@ import { fileURLToPath } from "url";
 import guideRouter from "./routes/guide.js";
 import hooksRouter from "./platform/hooks.js";
 import { tenantResolver } from "./platform/tenantResolver.js";
+import { wrongPortFallback } from "./utils/wrongPortPage.js";
 
 const PROVISIONED_ENV_KEYS = [
   "VITE_AUTH0_CLIENT_ID", "AUTH0_AUDIENCE", "AUTH0_TOOL_AUDIENCE",
@@ -47,6 +49,7 @@ const PROVISIONED_ENV_KEYS = [
   "AUTH0_CIBA_CLIENT_ID", "AUTH0_CIBA_CLIENT_SECRET",
   "AUTH0_MFA_ACTION_ID",
   "VAULT_CONN_CRM", "FGA_STORE_ID", "FGA_MODEL_ID",
+  "DEMO_USER_ALICE_ID", "DEMO_USER_BOB_ID",
 ];
 
 // Remove specific keys from the .env file and from process.env.
@@ -742,7 +745,12 @@ app.post("/api/vault/disconnect", validateAccessToken, async (req, res) => {
 
 app.get("/api/vault/providers", validateAccessToken, async (req, res) => {
   const user = extractUser(req);
-  const linked = await getToken(user.sub, "crm", req.tenant, user.accessToken);
+  let linked = null;
+  try {
+    linked = await getToken(user.sub, "crm", req.tenant, user.accessToken);
+  } catch {
+    // Connection exists but doesn't allow API access (e.g. authentication-only) -- treat as not linked for display purposes.
+  }
   res.json({ providers: linked ? [{ provider: "crm" }] : [] });
 });
 
@@ -768,6 +776,14 @@ app.get("/api/mcp/status", (_req, res) => {
 // Logs: recent tool call log entries written by the MCP server.
 app.get("/api/mcp/logs", (_req, res) => {
   res.json({ logs: getLogs() });
+});
+
+// FGA: current simulated tuple graph for this tenant (Lab 06). Only
+// meaningful in simulated mode -- when a live FGA store is provisioned,
+// `live: true` comes back with an empty tuple list, since those tuples
+// live in Okta FGA, not in this process.
+app.get("/api/fga/tuples", (req, res) => {
+  res.json(listTuples(req.tenant));
 });
 
 // Test: direct authenticated tool call. The user's access token is used
@@ -797,6 +813,17 @@ if (fs.existsSync(distDir)) {
     res.sendFile(path.join(distDir, "index.html"));
   });
   console.log(`[Server] Serving built SPA from ${distDir}`);
+} else {
+  // Dev mode: no built SPA here, the real app is Vite on 5173. Anything
+  // not under /api or /hooks is someone hitting this port directly
+  // (e.g. Codespaces' port-forward toast pointing at the wrong port).
+  app.get(
+    /^(?!\/(api|hooks)\/).*/,
+    wrongPortFallback(
+      "Nexus API server",
+      "This backend powers tool calls, authentication, and provisioning for the Nexus app."
+    )
+  );
 }
 
 // Start servers

@@ -12,8 +12,13 @@ const SUCCESS_BADGES = {
 function ToolCall({ tc }) {
   const [expanded, setExpanded] = useState(false);
   const isSuccess = tc.status === "success";
-  // Error → only OBO badge (failure at auth boundary, deeper layers not reached)
-  const badges = isSuccess
+  const isDenied  = tc.status === "denied";
+  // "denied" means the call reached the tool and its security layers --
+  // it's just that one of them (FGA, scope, Token Vault, ...) said no.
+  // That's different from "error", where the call never got that far.
+  // Show the same badges as success for both, since the layers were
+  // actually exercised either way.
+  const badges = isSuccess || isDenied
     ? (SUCCESS_BADGES[tc.tool] || ["OBO"])
     : ["OBO"];
 
@@ -25,7 +30,7 @@ function ToolCall({ tc }) {
         aria-expanded={expanded}
       >
         <span className={`tool-call-icon tool-call-icon--${tc.status}`}>
-          {isSuccess ? "✓" : "✗"}
+          {isSuccess ? "✓" : isDenied ? "⊘" : "✗"}
         </span>
         <span className="tool-call-name">{tc.tool}</span>
         <div className="tool-call-badges">
@@ -42,6 +47,10 @@ function ToolCall({ tc }) {
             <pre className="tool-call-result">
               {JSON.stringify(tc.result, null, 2)}
             </pre>
+          ) : isDenied ? (
+            <p className="tool-call-error-msg">
+              {tc.result?.error || "Access denied."}
+            </p>
           ) : !isSuccess ? (
             <p className="tool-call-error-msg">
               {tc.result?.error || tc.result?.message || "Tool execution failed"}

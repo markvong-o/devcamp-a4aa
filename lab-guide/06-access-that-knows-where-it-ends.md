@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > This module is the one piece you **watch** rather than configure. In previous modules you enabled Dashboard settings and walked through the implementation. In this module there is nothing to enable and nothing to read. Just run the prompts and watch the authorization model enforce access decisions live. FGA is already provisioned and enforced for your tenant.
 
-## Objective *(~10 min)*
+## Objective *(~20 min)*
 
 Nexus gives every user access to the company knowledge base, but not all of it. An engineer should read engineering documents, and someone in sales should not read HR compensation data. Reading a document is also not the same as sharing it externally.
 
@@ -97,8 +97,8 @@ All demo users are seeded as **viewer** on **document:handbook** and **document:
 
 | User | Additional tuples | Net effect |
 |---|---|---|
-| **alice@docagent.demo** | **alice member department:engineering**, **alice editor document:q3-roadmap**, **alice editor document:product-spec-v2** | Reads all-company + all engineering docs; can share q3-roadmap and product-spec-v2 |
-| **bob@docagent.demo** | *(no additional tuples)* | All-company docs only; denied on engineering, HR, and executive |
+| **`alice@docagent.demo`** | **alice member department:engineering**, **alice editor document:q3-roadmap**, **alice editor document:product-spec-v2** | Reads all-company + all engineering docs; can share q3-roadmap and product-spec-v2 |
+| **`bob@docagent.demo`** | *(no additional tuples)* | All-company docs only; denied on engineering, HR, and executive |
 
 **document:compensation-q3** (HR) and **document:board-deck-q3** (Executive) are intentionally never seeded for demo users, so any query against them is a clean deny. Together these tuples give the demo a direct-access allow, a department-inheritance allow, a direct deny, and a confidential-classification deny.
 
@@ -137,6 +137,9 @@ Each prompt below maps to a specific edge of the relationship graph. Once chat i
 Relationship-based authorization handles the real shape of a knowledge organization (individuals, departments, matrixed ownership, document tiers) without the rigid role explosion that RBAC forces on you. More importantly, FGA keeps confidential documents for HR from ever appearing in an engineer's search results, which is what the compliance team ultimately cares about. That keeps data classification risk off the quarterly risk register.
 
 You observed this implementation rather than building it yourself. The same **sub**-keyed decision you saw the store make has been firing inside the MCP server since *One trust boundary for every agent*. Token Vault, from *The agent acts as the employee, not a shared bot*, minted CRM credentials for the users FGA just authorized, and CIBA, from *Humans approve what can't be undone*, gated irreversible shares on the same identity. All five controls key off the same **sub**.
+
+> [!NOTE]
+> This module has no **Run Checks** button. Instead, the Nexus app asks a short knowledge-check question about *why* Alice can read the Q3 roadmap and Bob can't. Answer it correctly to unlock the module.
 
 #### <span style="font-variant: small-caps">Congrats!</span>
 

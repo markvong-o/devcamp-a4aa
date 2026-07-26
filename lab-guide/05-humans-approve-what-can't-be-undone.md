@@ -36,12 +36,14 @@ Provision Resources created a CIBA client on your tenant (`docagent-ciba-codespa
 
 For CIBA push notifications to fire on a real device, the logged-in user must be enrolled in Guardian.
 
+Guardian push MFA is enforced tenant-wide (see *Every agent action has an owner*), so you most likely already enrolled a device the first time you logged in as Alice. If so, skip to step 4.
+
 1. In the Auth0 Dashboard, go to **Security → Multi-factor Auth** and confirm Guardian is enabled.
-2. Log out of Nexus and log back in as **alice@docagent.demo**.
+2. Log out of Nexus and log back in as **`alice@docagent.demo`**.
 3. Auth0 will prompt to enroll a second factor. Open the **Auth0 Guardian** app and scan the QR code shown.
 4. Once enrolled, triggering a document share sends a real Guardian push notification to your device.
 
-The checkpoint verifier checks that **alice@docagent.demo** has a confirmed Guardian enrollment.
+The checkpoint verifier checks that **`alice@docagent.demo`** has a confirmed Guardian enrollment.
 
 > [!NOTE]
 > Self-hosting **starter/**? Create a confidential Regular Web Application, add the **urn:openid:params:grant-type:ciba** grant in **Advanced Settings → Grant Types**, authorize it against your backend and MCP APIs, and enroll your user in Guardian push MFA.
@@ -241,7 +243,7 @@ In **src/hooks/useChat.js**, **startPolling** checks **/api/ciba/status/:authReq
 > [!NOTE]
 > **Preview: you'll run this live in *Putting it all together* (End-to-End).** Once chat unlocks after *Access that knows where it ends*, here's the demo scenario you'll drive yourself:
 >
-> 1. Prompt Nexus: *"Share the Q3 roadmap with external@partner.com."*
+> 1. Prompt Nexus: *"Share the Q3 roadmap with `external@partner.com`."*
 > 2. The response includes a pending-approval card with the binding message, e.g. **Approve: share Q3 Product Roadmap to external at partner.com**.
 > 3. A Guardian push notification arrives on your enrolled device showing the same binding message.
 > 4. Tap **Allow** in the Guardian app.

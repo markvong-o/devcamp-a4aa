@@ -43,6 +43,9 @@ export class Tenant {
         vault_connections: process.env.VAULT_CONN_CRM
           ? { crm: process.env.VAULT_CONN_CRM }
           : undefined,
+        demo_users: (process.env.DEMO_USER_ALICE_ID || process.env.DEMO_USER_BOB_ID)
+          ? { alice: process.env.DEMO_USER_ALICE_ID, bob: process.env.DEMO_USER_BOB_ID }
+          : undefined,
       };
     }
   }

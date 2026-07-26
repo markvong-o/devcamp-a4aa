@@ -1,6 +1,6 @@
 Five core modules built five layers of control. This closing run drives the full Nexus workflow and confirms every layer fires in one sequence.
 
-## Objectives
+## Objectives *(~20 min)*
 
 - Drive Nexus through a happy-path document workflow as Alice.
 - Drive a second sequence that trips CIBA (external document share).
@@ -14,7 +14,7 @@ Five core modules built five layers of control. This closing run drives the full
 - You have already clicked **Connect** next to "CRM" in the app header and completed the Connected Accounts link as Alice. Without this, **log_crm_activity** fails with "No CRM account linked" instead of returning a live federated token in step 7 below.
 - Your tenant is provisioned, meaning the Nexus API, MCP API, SPA client, M2M client, and CRM connection are already in place.
 - The app is running: API :3000, MCP :3001, CRM mock :3002, frontend :5173 (or the next available port; check the terminal output from **npm run dev** if the browser preview doesn't open automatically).
-- Demo users: **alice@docagent.demo** (engineering team, editor on q3-roadmap), **bob@docagent.demo** (all-company docs only).
+- Demo users: **`alice@docagent.demo`** (engineering team, editor on q3-roadmap), **`bob@docagent.demo`** (all-company docs only).
 
 > [!NOTE]
 > **Missing OPENAI_API_KEY or it expired?** Nexus falls back to the pattern-matching simulator (**server/simulator.js**) automatically. The simulator supports this entire happy path, the CIBA path, and every negative test below. You can complete this module without a live LLM.
@@ -24,7 +24,7 @@ Five core modules built five layers of control. This closing run drives the full
 
 ## Happy path: engineering document workflow
 
-1. Log in as Alice.
+1. Log in as Alice (**`alice@docagent.demo`** / **`DevCamp1!`**).
 2. Prompt: *"Find everything we have on the Q3 roadmap."*
 3. Expected:
    - Tool call **search_documents** returns **q3-roadmap** (title "Q3 Product Roadmap", department engineering).
@@ -41,7 +41,7 @@ Five core modules built five layers of control. This closing run drives the full
 
 ## CIBA path: external document share
 
-8. Prompt: *"Share the Q3 roadmap with external@partner.com."*
+8. Prompt: *"Share the Q3 roadmap with `external@partner.com`."*
 9. Expected: a push notification card appears in the chat reading "Push notification sent — approve on your device" and showing the binding message **Approve: share Q3 Product Roadmap to external at partner.com**.
 10. Approve the push on your enrolled Guardian device.
 11. The UI flips; the share executes with a **sharedAt** timestamp.
@@ -50,20 +50,27 @@ Five core modules built five layers of control. This closing run drives the full
 
 ### FGA deny: outside department
 
-- Log in as Bob.
-- Prompt: *"Show me the Q3 roadmap."*
+- Log in as Bob (**`bob@docagent.demo`** / **`DevCamp1!`**).
+- Prompt: *"Show me the Q3 roadmap."* (Clicking the **Find the Q3 roadmap** suggestion chip also works, but routes to a different tool, per the note below.)
 - Expected: **[FGA] Check: user:auth0|<bob_sub> can_read document:q3-roadmap -> DENIED**. No content returns.
+
+> [!NOTE]
+> Depending on the exact wording, this can route to either **get_document** or **search_documents**, and they handle denial differently by design. When you call **get_document** (triggered by "show", "open", "read", etc. plus a specific document name), it returns an explicit **{ success: false, error: "Access denied..." }** and logs the **DENIED** line. When you call **search_documents** (triggered by "find", "search", or the **Find the Q3 roadmap** chip), it never returns an explicit error. Instead, it silently filters denied documents out of the results, so you see **{ success: true, results: [], total: 0 }** with no "Access denied" message.
+>
+> This difference is intentional. A search that explicitly denies a match would leak information to Bob by confirming that a document exists matching his query. He would only know it's one he cannot access. By filtering silently, "nothing found" becomes indistinguishable from "nothing exists," which protects information without surfacing an error. **get_document**, by contrast, is asking for one specific, named resource. A clear explicit denial on a known, named document does not disclose anything Bob did not already know to ask for.
 
 ### FGA deny: confidential document
 
 - Logged in as Alice or Bob.
 - Prompt: *"Find the compensation review."*
-- Expected: **search_documents** returns zero results. **get_document** with **documentId: compensation-q3** returns **Access denied**.
+- Expected: **search_documents** returns zero results (**{ success: true, results: [], total: 0 }**, same silent-filtering behavior as above, no explicit error).
+- To see the explicit **get_document** denial for the same document, either prompt *"Show me the compensation review"* instead, or open the **Tool Tester** tab and call **get_document** directly with **documentId: compensation-q3**.
+- Expected there: **{ success: false, error: "Access denied..." }** and an **[FGA] Check: ... can_read document:compensation-q3 -> DENIED** log line.
 
 ### FGA deny: share as viewer
 
-- Log in as Bob.
-- Prompt: *"Share the employee handbook with external@partner.com."*
+- Log in as Bob (**`bob@docagent.demo`** / **`DevCamp1!`**).
+- Prompt: *"Share the employee handbook with `external@partner.com`."*
 - A push notification card appears. Approve it on your enrolled Guardian device.
 - Expected after approval: **[FGA] Check: user:auth0|<bob_sub> can_share document:handbook -> DENIED**. The share is blocked at the data boundary. Bob can read the handbook but viewers do not meet **can_share**.
 
@@ -81,9 +88,10 @@ Five core modules built five layers of control. This closing run drives the full
 - Navigate to **Applications → Applications → `docagent-mcp-obo` → APIs tab → Nexus Backend API** and deselect **mcp:docs:share**.
 
   ![docagent-mcp-obo APIs tab with mcp:docs:share deselected](images/06-missing-scope-deselected.png)
-- Prompt: *"Share the Q3 roadmap with external@partner.com."*
+- Prompt: *"Share the Q3 roadmap with `external@partner.com`."*
 - A push notification card appears. Approve it on your enrolled Guardian device.
 - Expected after approval: **403 { "error": "Insufficient scope", "required": "mcp:docs:share" }**.
+- If the share still succeeds, the OBO-scoped token from an earlier call may still be cached (it's cached for up to 5 minutes). Wait a few minutes and retry, or restart the dev server to force a fresh token exchange.
 - Re-enable the scope when done.
 
 ### Token Vault disabled: fails closed
@@ -91,9 +99,9 @@ Five core modules built five layers of control. This closing run drives the full
 - In the Auth0 Dashboard, go to **Authentication → Social → crm-`{{demoName}}`** and turn off the **Authentication and Connected Accounts for Token Vault** purpose (back to plain Authentication).
 
   ![CRM connection Purpose section reverted to plain Authentication](images/06-token-vault-purpose-disabled.png)
-- Prompt: *"Log in the CRM that I read the Q3 roadmap."*
-- Expected: the tool call fails: **{ "success": false, "error": "No CRM account linked. Ask the user to connect their CRM." }**. The server log shows **[Token Vault] (live) exchange failed for crm: ...** right before it.
-- Once a real federated connection is provisioned for a user, Token Vault either returns a real per-user token or fails closed. There is no silent fallback to a mock credential. That is the correct behavior for a production system: a missing credential should never be papered over with a fake one.
+- Prompt: *"Log that I read the Q3 roadmap in the CRM."*
+- Expected: the tool call fails: **{ "success": false, "error": "CRM connection does not allow API access (it's set to authentication-only). Ask the user to enable API access for this connection, or reconnect via Connected Accounts." }**. The server log shows **[Token Vault] (live) exchange failed for crm: ...** right before it.
+- This is a real deny, not a fallback: once a real federated connection exists for a user, Auth0 rejecting the exchange is treated as a hard denial and surfaces as this specific error. It never silently succeeds via the in-memory mock credential, which only exists for the fully-offline case where no live connection is provisioned at all. A missing or disabled credential should never be papered over with a fake one.
 - Toggle the Token Vault purpose back on and re-confirm the Connected Accounts link (*The agent acts as the employee, not a shared bot*) when done.
 
 ## Reading the logs

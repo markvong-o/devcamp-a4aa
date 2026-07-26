@@ -1,0 +1,11 @@
+{
+  "name": "devcamp-a4aa",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "forwardPorts": [5173, 3000, 3001, 3002],
+  "portsAttributes": {
+    "5173": { "label": "Nexus App (open this one)", "onAutoForward": "openBrowser" },
+    "3000": { "label": "Nexus API (internal)", "onAutoForward": "silent" },
+    "3001": { "label": "MCP Server (internal)", "onAutoForward": "silent" },
+    "3002": { "label": "CRM Mock (internal)", "onAutoForward": "silent" }
+  }
+}

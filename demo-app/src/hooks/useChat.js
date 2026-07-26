@@ -82,7 +82,13 @@ export function useChat() {
       // Start polling so we can resume the commit once the rep approves.
       if (data.pendingCIBA) {
         setPendingCIBA(data.pendingCIBA);
-        startPolling(data.pendingCIBA);
+        // Carry the exact message that triggered CIBA through to the poll
+        // callback instead of re-deriving "the last user message" from
+        // state later -- `messages` here is a snapshot from before this
+        // message was appended (setMessages is async), so reading it
+        // inside the setInterval closure below would resend the wrong,
+        // earlier message once approval lands.
+        startPolling({ ...data.pendingCIBA, originalMessage: content });
       }
     } catch (error) {
       setMessages((prev) => [
@@ -120,8 +126,7 @@ export function useChat() {
               content: `Approval received. Committing ${ciba.toolName}.`,
             },
           ]);
-          const lastUser = messages.filter((m) => m.role === "user").pop();
-          if (lastUser) await sendMessage(lastUser.content);
+          if (ciba.originalMessage) await sendMessage(ciba.originalMessage);
         } else if (
           payload.status === "denied" ||
           payload.status === "expired"

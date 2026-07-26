@@ -36,6 +36,7 @@ import {
   disableMfaCustomization,
   createPostLoginAction,
   deployAction,
+  waitForActionBuilt,
   bindActionToPostLogin,
   unbindAndDeleteAction,
 } from "./auth0Management.js";
@@ -218,6 +219,7 @@ export async function runProvision(
 
   // 8. Guardian push + MFA customization via Actions.
   await safe("enable guardian push factor", () => enableGuardianPush(ctx));
+  await safe("set mfa policy to always", () => setMfaPolicyAlways(ctx));
   await safe("enable mfa customization in postlogin action", () => enableMfaCustomization(ctx));
 
   // 9. Post-login Action: enforce Guardian push MFA for the SPA.
@@ -247,6 +249,7 @@ export async function runProvision(
     })
   );
   if (mfaAction?.id) {
+    await safe("mfa action wait for built", () => waitForActionBuilt(ctx, mfaAction.id));
     await safe("mfa action deploy", () => deployAction(ctx, mfaAction.id));
     await safe("mfa action bind", () =>
       bindActionToPostLogin(ctx, mfaAction.id, "Enforce Guardian Push MFA")
@@ -271,6 +274,7 @@ export async function runProvision(
     ciba_client_id: ciba?.client_id,
     ciba_client_secret: ciba?.client_secret,
     mfa_action_id: mfaAction?.id,
+    demo_users: { alice: alice?.user_id, bob: bob?.user_id },
     vault_connections,
     ...(fga
       ? {
@@ -311,6 +315,7 @@ export async function runDeprovision(ctx) {
   await safe("del demo user alice", () => deleteDemoUser(ctx, "alice@docagent.demo"));
   await safe("del demo user bob",   () => deleteDemoUser(ctx, "bob@docagent.demo"));
   await safe("disable guardian push", () => disableGuardianPush(ctx));
+  await safe("reset mfa policy", () => resetMfaPolicy(ctx));
   await safe("disable mfa customization in postlogin action", () => disableMfaCustomization(ctx));
   if (fgaStoreId) {
     const fgaSettings = fgaSettingsFromEnvOrRecord({});
@@ -335,5 +340,11 @@ export function deploymentDataToEnvVars(dd) {
   if (dd.mfa_action_id) vars.AUTH0_MFA_ACTION_ID = dd.mfa_action_id;
   if (dd.fga_store_id) vars.FGA_STORE_ID = dd.fga_store_id;
   if (dd.fga_model_id) vars.FGA_MODEL_ID = dd.fga_model_id;
+  // Persisted so the FGA seeding branch (alice vs. bob access) still works
+  // after a restart -- deploymentData.demo_users otherwise only lives in
+  // memory and is lost the moment the server restarts (which happens
+  // automatically right after provisioning).
+  if (dd.demo_users?.alice) vars.DEMO_USER_ALICE_ID = dd.demo_users.alice;
+  if (dd.demo_users?.bob) vars.DEMO_USER_BOB_ID = dd.demo_users.bob;
   return vars;
 }

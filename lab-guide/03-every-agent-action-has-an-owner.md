@@ -1,4 +1,4 @@
-## Objective *(~15 min)*
+## Objective *(~20 min)*
 
 The MCP server now has a trust boundary: it can distinguish a first-party agent (CIMD identity) from an anonymous request and a valid token from a forged one. But OBO token exchange needs an employee identity to carry through to tool execution, and right now there is nothing to carry. This module wires Auth0 Universal Login so every session has a verifiable employee **sub**, the identity that CIMD's OBO exchange will preserve to every tool call downstream.
 
@@ -13,9 +13,11 @@ By the end you will understand:
 
 ### Why we're building this
 
-An AI agent that calls tools without a verified user identity cannot produce an audit trail that satisfies compliance requirements. Every access decision downstream depends on knowing which employee is behind the request. That knowledge determines which documents they can read, which credentials Token Vault returns, and which shares CIBA approves.
+AI agents that call tools without verified user identity cannot produce compliance-grade audit trails. Every downstream access decision depends on knowing which employee initiated the request. That identity determines which documents users can read. It also determines which credentials Token Vault returns and which shares CIBA approves.
 
-The commercial consequence is direct. Enterprise customers in regulated industries cite the absence of a user-level audit trail as the single most common reason they delay or block AI agent deployments. Universal Login plugs your existing IdP straight into the agent's authorization chain. User Authentication ships with zero migration costs: no new identity system to stand up, no user re-enrollment, no parallel directory. Every downstream control keys off that verified identity. When you skip it, Token Vault and CIBA are working from a guess instead of a fact. A clean, attributable trail on every document access compresses security review cycles from months to weeks, directly accelerating the path to a signed contract.
+The commercial consequence is direct. Enterprise customers in regulated industries most often delay AI agent deployments due to the absence of user-level audit trails. Universal Login plugs your existing IdP into the agent's authorization chain. User Authentication requires zero migration: no new identity system, no re-enrollment, no parallel directory.
+
+Every downstream control keys off that verified identity. Without it, Token Vault and CIBA work from a guess instead of a fact. A clean, attributable trail on document access compresses security review cycles from months to weeks. This acceleration shortens the path to contract signature.
 
 ## Prerequisites
 
@@ -111,6 +113,8 @@ const { loginWithRedirect, isLoading } = useAuth0();
 
 > [!IMPORTANT]
 > **Log in now.** In the Nexus app, click **Log In** and sign in as `alice@docagent.demo` / `DevCamp1!` (from Prerequisites). This is the first time you're using these credentials, and everything from here on assumes you're logged in.
+>
+> Guardian push MFA is enforced tenant-wide, so login also triggers an MFA enrollment or challenge. The first time, you'll be prompted to enroll a device in the Auth0 Guardian app; after that, expect a push challenge on every login. This is required. The Checkpoint below fails without it.
 
 ### Step 4: The access token is attached to **/api/chat**
 
@@ -186,13 +190,14 @@ There is no mock **anonymous** user: a request without a valid token never reach
 ## Checkpoint
 
 > [!NOTE]
-> The **Run Checks** button lives in *this Lab Guide*, at the bottom of this page, not inside the Nexus app itself.
+> **Run Checks** appears in two places that stay in sync: at the bottom of this Lab Guide page, and in the **Lab Progress** panel in the Nexus app (click the module row to expand it). Either one works.
 
-Use the **Run Checks** button at the bottom of this page. The in-app verifier confirms:
+Click **Run Checks**. The verifier confirms:
 
 - You are logged in as `alice@docagent.demo`.
 - The access token includes the Nexus API audience (`https://devcamp-docagent-api`).
 - The token carries the `chat:send` scope.
+- Guardian push MFA was completed at login.
 
 > [!TIP]
 > You can also decode the raw JWT at [jwt.io](https://jwt.io) to inspect the **aud**, **sub**, and **scope** claims directly. To get the raw token without needing chat unlocked, open your browser's DevTools console and run:
@@ -203,7 +208,11 @@ Use the **Run Checks** button at the bottom of this page. The in-app verifier co
 
 ## What you learned
 
-Every Nexus call now carries a verifiable user identity, which becomes the foundational anchor for everything that follows. Token Vault, from *The agent acts as the employee, not a shared bot*, mints CRM credentials scoped to this user. CIBA, from *Humans approve what can't be undone*, binds device approval to this same identity. FGA, from *Access that knows where it ends*, evaluates document access keyed on this **sub**. The MCP server built in *One trust boundary for every agent* receives this identity on every tool call. That's precisely what FGA, Token Vault, and CIBA all reason against. A verifiable identity at every layer is what makes an audit trail possible. An audit trail is what makes compliance sign-off possible.
+Every Nexus call now carries a verifiable user identity. This becomes the foundational anchor for everything downstream.
+
+Token Vault (from *The agent acts as the employee, not a shared bot*) mints CRM credentials scoped to this user. CIBA (from *Humans approve what can't be undone*) binds device approval to the same identity. FGA (from *Access that knows where it ends*) evaluates document access keyed on this **sub**. The MCP server receives this identity on every tool call.
+
+A verifiable identity at every layer makes audit trails possible. Audit trails make compliance sign-off possible.
 
 > [!NOTE]
 > Business win: a clean user-level audit trail on document access is the difference between a six-month security review and a two-week one.

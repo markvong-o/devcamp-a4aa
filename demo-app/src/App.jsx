@@ -4,6 +4,7 @@ import { useRuntimeConfig } from "./config/runtimeConfig";
 import { Chat } from "./components/Chat";
 import { MCPStatus } from "./components/MCPStatus";
 import { ToolLogs } from "./components/ToolLogs";
+import { FGATuples } from "./components/FGATuples";
 import { ToolTester } from "./components/ToolTester";
 import { LoginScreen } from "./components/LoginScreen";
 import { useLabProgress } from "./hooks/useLabProgress";
@@ -14,6 +15,7 @@ const TABS = [
   { id: "status", label: "MCP Status" },
   { id: "logs",   label: "Tool Logs" },
   { id: "tester", label: "Tool Tester" },
+  { id: "fga",    label: "FGA Tuples" },
 ];
 
 const LAB_MODULES = ["01", "02", "03", "04", "05"];
@@ -112,6 +114,7 @@ export default function App() {
           {activeTab === "status" && <MCPStatus />}
           {activeTab === "logs"   && <ToolLogs />}
           {activeTab === "tester" && <ToolTester />}
+          {activeTab === "fga"    && <FGATuples />}
         </>
       )}
 

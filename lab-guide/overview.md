@@ -1,5 +1,8 @@
 ## Welcome to Auth0 Dev{Camps} | Agentic AI
 
+> [!TIP]
+> Want to run this lab locally later, outside the Codespace? The full source is on GitHub: [github.com/udplabs/a4aa-devcamp](https://github.com/udplabs/a4aa-devcamp).
+
 You built Nexus's MCP server: it exposes four tools covering document search, document retrieval, CRM logging, and external sharing. The first-party Nexus agent already uses it, third-party partners want to integrate, and Claude Desktop users want to call your tools directly. The server works, but it cannot distinguish a legitimate first-party agent from a forged request, and when a valid agent connects, it has no way to know which employee is behind it.
 
 You are the team shipping that server as a platform and the bottleneck is identity. Without proof of who is calling and which employee they represent, the server cannot enforce any policy downstream, leaving sensitive operations exposed to misuse. Over the next two hours, you will close that gap using Auth0's Auth for AI Agents suite.
