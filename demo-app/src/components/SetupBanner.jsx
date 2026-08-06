@@ -36,7 +36,7 @@ export function SetupBanner({ onReady }) {
         </div>
 
         <p className="setup-desc">
-          It looks like your environemnt variables are not set up yet. See <strong>Module 01: Prerequisites</strong>, 
+          It looks like your environment variables are not set up yet. See <strong>Module 01: Prerequisites</strong>, 
           Step 1 in your Lab Guide for where to find these values. Paste them into <code>demo-app/.env</code>:
         </p>
 
