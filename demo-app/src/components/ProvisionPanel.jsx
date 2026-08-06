@@ -88,8 +88,8 @@ export function ProvisionPanel({ onProvisioned }) {
         {status === "idle" && (
           <>
             <p className="setup-desc">
-              Your environment is configured. Click below to create the Auth0 applications,
-              APIs, and connections that Nexus needs. This takes about 15 seconds.
+              See <strong>Module 01: Prerequisites</strong>, Step 3 in your Lab Guide for what
+              this creates. Click below to provision — takes about 15 seconds.
             </p>
             <div className="setup-resource-list">
               {RESOURCE_PILLS.map((pill) => (
