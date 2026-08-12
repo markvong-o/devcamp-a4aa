@@ -111,7 +111,7 @@ Auth0 needs to fetch the metadata document to register the agent. Port 3001 is p
 2. Select **Import from URL**
 3. Paste the metadata document URL and click **Preview**
 
-*You should see: Auth0 fetches the document and shows a preview with **client_name** and **allowed_scopes** from your metadata.*
+*You should see: Auth0 fetches the document and shows a preview with **client_name** and **external_client_id** from your metadata.*
 
 ![Import from URL preview showing client_name and allowed_scopes](images/01-cimd-import-preview.png)
 
@@ -135,7 +135,7 @@ The OBO exchange takes a token scoped to the MCP API (the user's login audience)
 
 Creating the client from the Nexus MCP Server's Applications tab authorizes it there automatically. Confirm it also has access on the Nexus Backend API, since that's the API that actually holds the four per-tool scopes the OBO exchange targets:
 
-- **Nexus MCP Server**: `docagent-mcp-obo` should already be authorized for `chat:send`.
+- **Nexus MCP Server**: `docagent-mcp-obo` should already be authorized for `chat:send` for **User-delegated Access**.
 - **Nexus Backend API**: Auth0 Dashboard → **Applications → APIs → Nexus Backend API → Applications tab** → confirm `docagent-mcp-obo` is listed with all four **mcp:\*** scopes (`mcp:docs:search`, `mcp:docs:read`, `mcp:crm:log`, `mcp:docs:share`) granted for **user-delegated access**, meaning the scopes a *user's* token can carry through this client, as opposed to scopes the client would use to act as itself.
 
 Both APIs default to Application Access Policy "All apps allowed," so every scope is granted automatically the moment the client exists. There's nothing to individually toggle yet.
@@ -149,7 +149,7 @@ Both APIs default to Application Access Policy "All apps allowed," so every scop
 >
 > This toggle is a security posture choice and must be opted in explicitly. It is not enabled by default.
 >
-> 1. Still on **`docagent-mcp-obo`**
+> 1. On Auth0 Dashboard → **Applications → Applications → docagent-mcp-obo → Settings**
 > 2. Scroll to the **Token Exchange** section
 >
 > *You should see: the Token Exchange section with the On-Behalf-Of toggle off.*
@@ -281,7 +281,7 @@ result = await executeTool(toolName, parameters, user.accessToken);
 
 ## Checkpoint
 
-Use the **Run Checks** button at the bottom of this page. The in-app verifier confirms all five conditions automatically:
+Use the **Run Checks** button on the left of the Nexus app page. The in-app verifier confirms all five conditions automatically:
 
 - The CIMD metadata document is reachable and **client_id** equals the URL itself.
 - The Protected Resource Metadata endpoint returns **resource**, **authorization_servers**, and **scopes_supported**.

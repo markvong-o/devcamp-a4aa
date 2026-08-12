@@ -190,7 +190,6 @@ There is no mock **anonymous** user: a request without a valid token never reach
 ## Checkpoint
 
 > [!NOTE]
-> **Run Checks** appears in two places that stay in sync: at the bottom of this Lab Guide page, and in the **Lab Progress** panel in the Nexus app (click the module row to expand it). Either one works.
 
 Click **Run Checks**. The verifier confirms:
 

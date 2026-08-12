@@ -238,7 +238,7 @@ In **src/hooks/useChat.js**, **startPolling** checks **/api/ciba/status/:authReq
 
 ## Checkpoint
 
-**Step 1: Verify setup.** Use the **Run Checks** button at the bottom of this page. The in-app verifier confirms the CIBA grant is active on your provisioned CIBA client.
+**Step 1: Verify setup.** Use the **Run Checks** button on the left of the Nexus app page. The in-app verifier confirms the CIBA grant is active on your provisioned CIBA client.
 
 > [!NOTE]
 > **Preview: you'll run this live in *Putting it all together* (End-to-End).** Once chat unlocks after *Access that knows where it ends*, here's the demo scenario you'll drive yourself:

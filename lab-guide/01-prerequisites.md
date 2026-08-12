@@ -157,9 +157,9 @@ AUTH0_MGMT_CLIENT_SECRET=<management-client-secret>
 ```
 
 > [!TIP]
-> Your actual domain will look like `aquamarine-koala-16644.cic-demo-platform.auth0app.com`. The Launch Pad shows the exact value for your tenant, so copy it from there instead of typing it by hand.
+> Your actual domain is `{{idp.tenantDomain}}`.
 
-**If the credentials are not shown in the Launch Pad,** navigate to the Auth0 dashboard and create a custom M2M client with the following permissions, then use its Client ID and Secret in place of the Launch Pad values above:
+**If the credentials are not shown in the Launch Pad on the right,** navigate to the Auth0 dashboard and create a custom M2M client with the following permissions, then use its Client ID and Secret in place of the Launch Pad values above:
 
 ```
 read:resource_servers

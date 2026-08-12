@@ -52,10 +52,9 @@ The `docagent-mcp-obo` client you created in *One trust boundary for every agent
 > 2. Open **crm-codespace**
 > 3. Scroll down to the **Purpose** section
 > 4. Select **Authentication and Connected Accounts for Token Vault**
+> 5. Click **Save Changes**
 >
 > *You may see an **"Offline Access Scope"** warning dialog appear at this point. This is expected: Token Vault needs a refresh token to maintain the stored credential, and this dialog is Auth0 confirming that tradeoff. Click through it to continue.*
->
-> 5. Click **Save Changes**
 >
 > *You should see: the Purpose radio button update to the Token Vault option. Auth0 will automatically request a refresh token from the CRM on every OAuth2 flow so it can maintain the stored credential without user re-authentication.*
 >
@@ -159,7 +158,7 @@ The **userId: userSub** in the request body is the user's Auth0 subject, so the 
 
 ## Checkpoint
 
-Use the **Run Checks** button at the bottom of this page. The in-app verifier confirms Token Vault is enabled on the CRM connection.
+Use the **Run Checks** button on the left of the Nexus app page. The in-app verifier confirms Token Vault is enabled on the CRM connection.
 
 Before running checks, complete the parts you can do right now: Dashboard config and the Connected Accounts link, both independent of the chat interface.
 
